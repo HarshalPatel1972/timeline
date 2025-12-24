@@ -1,34 +1,49 @@
+'use client';
+
 import { create } from 'zustand';
 
-interface ExperienceState {
-  seed: string | null;
-  birthTime: number | null;
-  isBurned: boolean;
-  aggressionLevel: number;
-  hesitationTime: number;
-  fragmentsRevealed: number;
-  mousePosition: { x: number; y: number };
-  mouseVelocity: number;
-  isWithdrawing: boolean;
-  colorPhase: number;
-  theme: 'cosmic' | 'matrix' | 'noir' | 'pixar' | 'retro'; // New theme property
-  
-  // Actions
-  initSession: (seed: string) => void;
-  burnSession: () => void;
-  updateMouse: (x: number, y: number, velocity: number) => void;
-  addHesitation: (ms: number) => void;
-  setAggression: (level: number) => void;
-  revealFragment: () => void;
-  setWithdrawing: (withdrawing: boolean) => void;
-  updateColorPhase: (delta: number) => void;
+export interface UniverseDNA {
+  seed: string;
+  colors: {
+    background: string;
+    foreground: string;
+    accent: string;
+    glow: string;
+  };
+  geometry: {
+    type: 'sphere' | 'box' | 'tetrahedon' | 'torus' | 'particles' | 'shards';
+    count: number;
+    scale: number;
+    roughness: number;
+    metalness: number;
+    wireframe: boolean;
+  };
+  physics: {
+    speed: number;
+    flowType: 'sine' | 'noise' | 'vortex' | 'explosion';
+    gravity: number;
+  };
+  postProcessing: {
+    bloomIntensity: number;
+    noiseOpacity: number;
+    glitch: boolean;
+    pixelate: boolean;
+    vignetteDarkness: number;
+    focusDistance: number;
+  };
+  audio: {
+    baseFreq: number;
+    scaleType: 'major' | 'minor' | 'lydian' | 'dorian';
+    tempo: number;
+  };
 }
 
-// Simple seeded RNG
+// Deterministic Random Number Generator
 function createRNG(seed: string): () => number {
-  let h = 0;
+  let h = 0x811c9dc5;
   for (let i = 0; i < seed.length; i++) {
-    h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
   }
   return function() {
     h = Math.imul(h ^ h >>> 15, h | 1);
@@ -37,58 +52,83 @@ function createRNG(seed: string): () => number {
   };
 }
 
-export const useExperienceStore = create<ExperienceState>((set) => ({
-  seed: null,
-  birthTime: null,
-  isBurned: false,
-  theme: 'cosmic', // Default
-  aggressionLevel: 0,
-  hesitationTime: 0,
-  fragmentsRevealed: 0,
-  mousePosition: { x: 0, y: 0 },
-  mouseVelocity: 0,
-  isWithdrawing: false,
-  colorPhase: 0,
+function generateUniverse(seed: string): UniverseDNA {
+  const rng = createRNG(seed);
   
-  initSession: (seed: string) => {
-    // Deterministic theme from seed
-    const themes = ['cosmic', 'matrix', 'noir', 'pixar', 'retro'] as const;
-    const rng = createRNG(seed);
-    const themeIndex = Math.floor(rng() * themes.length);
-    
-    set({
-      seed,
-      birthTime: Date.now(),
-      isBurned: false,
-      theme: themes[themeIndex], // Set the theme
-    });
+  // Colors (HSV to Hex for consistency)
+  const hue = rng();
+  const sat = 0.5 + rng() * 0.5;
+  
+  // Helper to standard hex (simplified for brevity)
+  const color = (h: number, s: number, l: number) => {
+     // Very simple placeholder color gen, normally we'd do full HSL conversion
+     // Using HSL strings directly in Three.js is often easier
+     return `hsl(${h * 360}, ${s * 100}%, ${l * 100}%)`;
+  };
+
+  return {
+    seed,
+    colors: {
+      background: color(hue, 0.2, 0.05), // Dark varied background
+      foreground: color((hue + 0.5) % 1, 0.1, 0.9), // Contrast text
+      accent: color((hue + 0.3) % 1, 0.8, 0.6), // Bright accent
+      glow: color(hue, 0.9, 0.5), // Glow/Bloom color
+    },
+    geometry: {
+      type: ['sphere', 'box', 'tetrahedon', 'torus', 'particles', 'shards'][Math.floor(rng() * 6)] as any,
+      count: Math.floor(50 + rng() * 4000), // Massive variance
+      scale: 0.1 + rng() * 2,
+      roughness: rng(),
+      metalness: rng(),
+      wireframe: rng() > 0.7,
+    },
+    physics: {
+      speed: 0.01 + rng() * 0.2, // From calm to frantic
+      flowType: ['sine', 'noise', 'vortex', 'explosion'][Math.floor(rng() * 4)] as any,
+      gravity: (rng() - 0.5) * 2,
+    },
+    postProcessing: {
+      bloomIntensity: rng() * 2.5,
+      noiseOpacity: rng() * 0.15,
+      glitch: rng() > 0.85, // Rare glitch universes
+      pixelate: rng() > 0.9, // Rare retro universes
+      vignetteDarkness: 0.5 + rng() * 0.6,
+      focusDistance: rng(),
+    },
+    audio: {
+      baseFreq: 50 + rng() * 200,
+      scaleType: ['major', 'minor', 'lydian', 'dorian'][Math.floor(rng() * 4)] as any,
+      tempo: 0.5 + rng() * 1.5,
+    }
+  };
+}
+
+interface ExperienceState {
+  dna: UniverseDNA | null;
+  mousePosition: { x: number; y: number };
+  
+  // Actions
+  initDNA: (seed: string) => void;
+  updateMouse: (x: number, y: number) => void;
+  burnSession: () => void;
+}
+
+export const useExperienceStore = create<ExperienceState>((set) => ({
+  dna: null,
+  mousePosition: { x: 0, y: 0 },
+  
+  initDNA: (seed: string) => {
+    const dna = generateUniverse(seed);
+    console.log("Universe Generated:", dna);
+    // Update CSS variables for UI
+    if (typeof document !== 'undefined') {
+        document.documentElement.style.setProperty('--color-background', dna.colors.background);
+        document.documentElement.style.setProperty('--color-foreground', dna.colors.foreground);
+    }
+    set({ dna });
   },
   
-  burnSession: () => set({ isBurned: true }),
+  updateMouse: (x: number, y: number) => set({ mousePosition: { x, y } }),
   
-  updateMouse: (x: number, y: number, velocity: number) => set((state) => ({
-    mousePosition: { x, y },
-    mouseVelocity: velocity,
-    aggressionLevel: velocity > 50 
-      ? Math.min(1, state.aggressionLevel + 0.15)
-      : Math.max(0, state.aggressionLevel - 0.02),
-  })),
-  
-  addHesitation: (ms: number) => set((state) => ({
-    hesitationTime: state.hesitationTime + ms,
-  })),
-  
-  setAggression: (level: number) => set({ aggressionLevel: Math.min(1, Math.max(0, level)) }),
-  
-  revealFragment: () => set((state) => ({
-    fragmentsRevealed: state.fragmentsRevealed + 1,
-  })),
-  
-  setWithdrawing: (withdrawing: boolean) => set({ isWithdrawing: withdrawing }),
-  
-  updateColorPhase: (delta: number) => set((state) => ({
-    colorPhase: state.colorPhase + delta,
-  })),
+  burnSession: () => set((state) => ({ /* In Multiverse mode, burn might just mean reset or nothing, but interface expects it */ })), 
 }));
-
-export { createRNG };
