@@ -1,170 +1,59 @@
 'use client';
 
-import { useEffect, useRef, useMemo, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useExperienceStore, createRNG } from '@/store/experience';
+import { useExperienceStore } from '@/store/experience';
 
-const fragmentTexts = [
-  "you were here",
-  "once",
-  "this moment",
-  "cannot",
-  "be held",
-  "the space between",
-  "seeing and",
-  "forgetting",
-  "is where",
-  "you",
-  "exist",
-  "briefly",
-  "like breath",
-  "on glass",
-  "already",
-  "fading",
-  "what you",
-  "almost",
-  "understood",
-  "stays",
-  "unnamed",
-  "between one",
-  "and none",
-  "there was",
-  "this"
+// A scripted narrative instead of random fragments
+const narrative = [
+  "This is not a product.",
+  "It is a moment.",
+  "You are the only one seeing this version.",
+  "Once you leave...",
+  "It will be gone forever.",
+  "No archives.",
+  "No history.",
+  "Just this.",
+  "Breathe.",
+  "Watch.",
+  "And let go."
 ];
 
-interface FragmentData {
-  text: string;
-  x: number;
-  y: number;
-  rotation: number;
-  skew: number;
-  fontSize: number;
-  threshold: number;
-  revealed: boolean;
-  id: number;
-}
-
 export function Fragments() {
-  const { seed, mousePosition, isWithdrawing, revealFragment, hesitationTime, addHesitation } = useExperienceStore();
-  const [fragments, setFragments] = useState<FragmentData[]>([]);
-  const [localDwell, setLocalDwell] = useState(0);
-  const lastMoveTime = useRef(Date.now());
-
-  // Create fragments on mount
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+  
+  // Auto-advance the narrative slowly
   useEffect(() => {
-    if (!seed) return;
-    
-    const rng = createRNG(seed);
-    const shuffled = [...fragmentTexts].sort(() => rng() - 0.5);
-    const count = Math.floor(shuffled.length * 0.65);
-    
-    const newFragments: FragmentData[] = [];
-    const usedPositions: { x: number; y: number }[] = [];
-    
-    for (let i = 0; i < count; i++) {
-      let x: number, y: number, attempts = 0;
-      
-      do {
-        x = 8 + rng() * 84;
-        y = 8 + rng() * 84;
-        attempts++;
-      } while (
-        attempts < 25 &&
-        usedPositions.some(p => Math.abs(p.x - x) < 12 && Math.abs(p.y - y) < 12)
-      );
-      
-      usedPositions.push({ x, y });
-      
-      newFragments.push({
-        text: shuffled[i],
-        x,
-        y,
-        rotation: (rng() - 0.5) * 4,
-        skew: (rng() - 0.5) * 3,
-        fontSize: 16 + rng() * 12,
-        threshold: 800 + rng() * 3000,
-        revealed: false,
-        id: i,
-      });
-    }
-    
-    setFragments(newFragments);
-  }, [seed]);
+    const timer = setInterval(() => {
+        setVisible(false); // Fade out
+        setTimeout(() => {
+            setIndex((prev) => (prev + 1) % narrative.length); // Next line
+            setVisible(true); // Fade in
+        }, 2000); // Wait for fade out
+    }, 6000); // Read time
 
-  // Track mouse dwell time
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const timeSinceMove = now - lastMoveTime.current;
-      
-      if (timeSinceMove > 400) {
-        setLocalDwell(d => d + 100);
-        addHesitation(100);
-      } else {
-        setLocalDwell(0);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [addHesitation]);
-
-  // Update last move time on mouse movement
-  useEffect(() => {
-    lastMoveTime.current = Date.now();
-  }, [mousePosition]);
-
-  // Check fragment reveals
-  useEffect(() => {
-    if (localDwell < 500) return;
-
-    setFragments(prev => prev.map(fragment => {
-      if (fragment.revealed) return fragment;
-      
-      const fragX = (fragment.x / 100) * window.innerWidth;
-      const fragY = (fragment.y / 100) * window.innerHeight;
-      
-      const dist = Math.sqrt(
-        Math.pow(mousePosition.x - fragX, 2) +
-        Math.pow(mousePosition.y - fragY, 2)
-      );
-      
-      if (dist < 180 && localDwell > fragment.threshold) {
-        revealFragment();
-        return { ...fragment, revealed: true };
-      }
-      
-      return fragment;
-    }));
-  }, [localDwell, mousePosition, revealFragment]);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-20">
-      <AnimatePresence>
-        {fragments.map(fragment => (
-          <motion.div
-            key={fragment.id}
-            className="absolute fragment-text whitespace-nowrap"
-            style={{
-              left: `${fragment.x}%`,
-              top: `${fragment.y}%`,
-              fontSize: `${fragment.fontSize}px`,
-              transform: `rotate(${fragment.rotation}deg) skewX(${fragment.skew}deg)`,
-            }}
-            initial={{ opacity: 0.12 }}
-            animate={{
-              opacity: isWithdrawing ? 0 : fragment.revealed ? 0.85 : 0.12,
-              scale: isWithdrawing ? 0.9 : 1,
-              y: isWithdrawing ? 15 : 0,
-              fontWeight: fragment.revealed ? 400 : 300,
-            }}
-            transition={{ 
-              duration: fragment.revealed ? 2.5 : 0.8,
-              ease: 'easeOut'
-            }}
-          >
-            {fragment.text}
-          </motion.div>
-        ))}
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+      <AnimatePresence mode='wait'>
+          {visible && (
+            <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, y: -10, filter: 'blur(10px)' }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                className="text-center"
+            >
+                <p className="fragment-text text-white/90 text-2xl md:text-3xl font-light tracking-[0.2em] uppercase cinematic-text">
+                    {narrative[index]}
+                </p>
+                {/* Subtle progress bar or decoration could go here, but minimal is better */}
+            </motion.div>
+          )}
       </AnimatePresence>
     </div>
   );
