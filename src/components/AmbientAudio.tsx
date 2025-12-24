@@ -70,27 +70,16 @@ export function AmbientAudio() {
     master.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 5);
   }, [dna]);
 
-  // Autostart on interaction or if we can
+  const { isAudioEnabled } = useExperienceStore();
+
   useEffect(() => {
-    const handleStart = () => {
-        if (!initialized.current) initAudio();
-        // Resume context if suspended (common browser policy)
+    if (isAudioEnabled && !initialized.current) {
+        initAudio();
         if (ctxRef.current?.state === 'suspended') {
             ctxRef.current.resume();
         }
-    };
-
-    window.addEventListener('click', handleStart);
-    window.addEventListener('mousemove', handleStart); // Try on mousemove too
-    window.addEventListener('touchstart', handleStart); // Mobile
-
-    return () => {
-        window.removeEventListener('click', handleStart);
-        window.removeEventListener('mousemove', handleStart);
-        window.removeEventListener('touchstart', handleStart);
-        ctxRef.current?.close();
-    };
-  }, [initAudio]);
+    }
+  }, [isAudioEnabled, initAudio]);
 
   return null;
 }

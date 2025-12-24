@@ -110,27 +110,31 @@ function generateUniverse(seed: string): UniverseDNA {
 interface ExperienceState {
   dna: UniverseDNA | null;
   mousePosition: { x: number; y: number };
+  isAudioEnabled: boolean;
   
   // Actions
   initDNA: (seed: string) => void;
   updateMouse: (x: number, y: number) => void;
   burnSession: () => void;
+  enableAudio: () => void;
 }
 
 export const useExperienceStore = create<ExperienceState>((set) => ({
   dna: null,
   mousePosition: { x: 0, y: 0 },
+  isAudioEnabled: false,
   
   initDNA: (seed: string) => {
     const dna = generateUniverse(seed);
-    console.log("Universe Generated:", dna);
-    // Update CSS variables for UI
+    // ... rest of initDNA ...
     if (typeof document !== 'undefined') {
         document.documentElement.style.setProperty('--color-background', dna.colors.background);
         document.documentElement.style.setProperty('--color-foreground', dna.colors.foreground);
     }
     set({ dna });
   },
+
+  enableAudio: () => set({ isAudioEnabled: true }),
   
   updateMouse: (x: number, y: number) => set({ mousePosition: { x, y } }),
   
