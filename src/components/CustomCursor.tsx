@@ -1,37 +1,45 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useExperienceStore } from '@/store/experience';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { useEffect } from 'react';
 
 export function CustomCursor() {
-  const { mousePosition, theme } = useExperienceStore();
+  const { mousePosition, dna } = useExperienceStore();
   
-  // Theme-specific cursor styles
-  const getCursorStyle = () => {
-    switch (theme) {
-      case 'matrix': return 'bg-[#00ff41] shadow-[0_0_10px_#00ff41]';
-      case 'noir': return 'bg-white mix-blend-difference';
-      case 'pixar': return 'bg-yellow-400 shadow-lg scale-125';
-      case 'retro': return 'bg-[#ff00ff] border-2 border-cyan-400 rounded-none';
-      default: return 'bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]';
-    }
-  };
+  // Spring physics for smooth follow (addresses "teleport" issue)
+  const springConfig = { damping: 25, stiffness: 300, mass: 0.5 };
+  const cursorX = useSpring(0, springConfig);
+  const cursorY = useSpring(0, springConfig);
+
+  useEffect(() => {
+    cursorX.set(mousePosition.x - 10);
+    cursorY.set(mousePosition.y - 10);
+  }, [mousePosition, cursorX, cursorY]);
+
+  // DNA-based cursor style
+  const color = dna ? dna.colors.accent : '#fff';
 
   return (
-    <motion.div
-      className={`fixed top-0 left-0 w-4 h-4 rounded-full pointer-events-none z-[100] ${getCursorStyle()}`}
-      animate={{
-        x: mousePosition.x - 8,
-        y: mousePosition.y - 8,
-        scale: 1,
-      }}
-      transition={{
-        type: "spring",
-        damping: 30,
-        stiffness: 200,
-        mass: 0.5
-      }}
-    />
+    <>
+      <motion.div
+        className="fixed top-0 left-0 w-5 h-5 rounded-full border border-white pointer-events-none z-[100] mix-blend-difference"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          backgroundColor: 'transparent',
+        }}
+      />
+      <motion.div
+        className="fixed top-0 left-0 w-2 h-2 rounded-full pointer-events-none z-[100]"
+        style={{
+          x: cursorX,
+          y: cursorY,
+          marginLeft: 6,
+          marginTop: 6,
+          backgroundColor: color,
+        }}
+      />
+    </>
   );
 }

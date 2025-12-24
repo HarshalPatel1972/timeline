@@ -11,7 +11,8 @@ export interface UniverseDNA {
     glow: string;
   };
   geometry: {
-    type: 'sphere' | 'box' | 'tetrahedon' | 'torus' | 'particles' | 'shards';
+    layout: 'sphere' | 'grid' | 'tunnel' | 'spiral' | 'cloud' | 'ring'; // New layouts
+    shape: 'sphere' | 'box' | 'tetrahedon' | 'torus' | 'cone';
     count: number;
     scale: number;
     roughness: number;
@@ -33,8 +34,9 @@ export interface UniverseDNA {
   };
   audio: {
     baseFreq: number;
-    scaleType: 'major' | 'minor' | 'lydian' | 'dorian';
+    scaleType: 'major' | 'minor' | 'pentatonic' | 'lydian' | 'phrygian' | 'chromatic';
     tempo: number;
+    detune: number;
   };
 }
 
@@ -75,30 +77,32 @@ function generateUniverse(seed: string): UniverseDNA {
       glow: color(hue, 0.9, 0.5), // Glow/Bloom color
     },
     geometry: {
-      type: ['sphere', 'box', 'tetrahedon', 'torus', 'particles', 'shards'][Math.floor(rng() * 6)] as any,
-      count: Math.floor(50 + rng() * 4000), // Massive variance
-      scale: 0.1 + rng() * 2,
+      layout: ['sphere', 'grid', 'tunnel', 'spiral', 'cloud', 'ring'][Math.floor(rng() * 6)] as any,
+      shape: ['sphere', 'box', 'tetrahedon', 'torus', 'cone'][Math.floor(rng() * 5)] as any,
+      count: Math.floor(200 + rng() * 1500), // optimized count
+      scale: 0.2 + rng() * 1.5,
       roughness: rng(),
       metalness: rng(),
-      wireframe: rng() > 0.7,
+      wireframe: rng() > 0.6,
     },
     physics: {
-      speed: 0.01 + rng() * 0.2, // From calm to frantic
+      speed: 0.05 + rng() * 0.4,
       flowType: ['sine', 'noise', 'vortex', 'explosion'][Math.floor(rng() * 4)] as any,
-      gravity: (rng() - 0.5) * 2,
+      gravity: (rng() - 0.5) * 5,
     },
     postProcessing: {
-      bloomIntensity: rng() * 2.5,
-      noiseOpacity: rng() * 0.15,
-      glitch: rng() > 0.85, // Rare glitch universes
-      pixelate: rng() > 0.9, // Rare retro universes
-      vignetteDarkness: 0.5 + rng() * 0.6,
+      bloomIntensity: 0.5 + rng() * 2,
+      noiseOpacity: 0.05 + rng() * 0.2, // increased noise visibility
+      glitch: rng() > 0.9,
+      pixelate: rng() > 0.95,
+      vignetteDarkness: 0.4 + rng() * 0.6,
       focusDistance: rng(),
     },
     audio: {
-      baseFreq: 50 + rng() * 200,
-      scaleType: ['major', 'minor', 'lydian', 'dorian'][Math.floor(rng() * 4)] as any,
-      tempo: 0.5 + rng() * 1.5,
+      baseFreq: 60 + rng() * 100, // lower frequencies for ambience
+      scaleType: ['major', 'minor', 'pentatonic', 'lydian', 'phrygian', 'chromatic'][Math.floor(rng() * 6)] as any,
+      tempo: 0.1 + rng() * 0.5,
+      detune: rng() * 20,
     }
   };
 }
