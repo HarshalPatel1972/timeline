@@ -22,8 +22,18 @@ const narrative = [
 export function Fragments() {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
+  const { theme } = useExperienceStore(); // Get theme
   
-  // Auto-advance the narrative slowly
+  // Theme-specific text styles
+  const getTextStyle = () => {
+    switch (theme) {
+      case 'matrix': return 'font-mono text-[#00ff41] bg-black/50 px-4';
+      case 'retro': return 'font-bold italic text-[#ff00ff] drop-shadow-[2px_2px_0_#00ffff]';
+      case 'noir': return 'font-serif text-white uppercase tracking-[0.5em] font-black border-y-2 border-white py-2';
+      case 'pixar': return 'font-sans text-white font-extrabold drop-shadow-lg tracking-normal';
+      default: return 'font-light tracking-[0.2em] uppercase text-white/90 cinematic-text'; // Cosmic
+    }
+  };
   useEffect(() => {
     const timer = setInterval(() => {
         setVisible(false); // Fade out
@@ -48,7 +58,7 @@ export function Fragments() {
                 transition={{ duration: 1.5, ease: "easeOut" }}
                 className="text-center"
             >
-                <p className="fragment-text text-white/90 text-2xl md:text-3xl font-light tracking-[0.2em] uppercase cinematic-text">
+                <p className={`fragment-text text-2xl md:text-3xl ${getTextStyle()}`}>
                     {narrative[index]}
                 </p>
                 {/* Subtle progress bar or decoration could go here, but minimal is better */}

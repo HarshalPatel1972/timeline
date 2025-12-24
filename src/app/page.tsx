@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useExperienceStore } from '@/store/experience';
 import { VoidPage } from '@/components/VoidPage';
+import { CustomCursor } from '@/components/CustomCursor';
 
 // Dynamic import for Three.js components (no SSR)
 const Experience = dynamic(() => import('@/components/Experience'), { 
@@ -63,6 +64,7 @@ export default function Home() {
 
   return (
     <main className="w-full h-screen overflow-hidden bg-[#050507]">
+      <CustomCursor />
       <Experience />
     </main>
   );

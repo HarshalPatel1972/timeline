@@ -11,6 +11,7 @@ interface ExperienceState {
   mouseVelocity: number;
   isWithdrawing: boolean;
   colorPhase: number;
+  theme: 'cosmic' | 'matrix' | 'noir' | 'pixar' | 'retro'; // New theme property
   
   // Actions
   initSession: (seed: string) => void;
@@ -40,6 +41,7 @@ export const useExperienceStore = create<ExperienceState>((set) => ({
   seed: null,
   birthTime: null,
   isBurned: false,
+  theme: 'cosmic', // Default
   aggressionLevel: 0,
   hesitationTime: 0,
   fragmentsRevealed: 0,
@@ -48,11 +50,19 @@ export const useExperienceStore = create<ExperienceState>((set) => ({
   isWithdrawing: false,
   colorPhase: 0,
   
-  initSession: (seed: string) => set({
-    seed,
-    birthTime: Date.now(),
-    isBurned: false,
-  }),
+  initSession: (seed: string) => {
+    // Deterministic theme from seed
+    const themes = ['cosmic', 'matrix', 'noir', 'pixar', 'retro'] as const;
+    const rng = createRNG(seed);
+    const themeIndex = Math.floor(rng() * themes.length);
+    
+    set({
+      seed,
+      birthTime: Date.now(),
+      isBurned: false,
+      theme: themes[themeIndex], // Set the theme
+    });
+  },
   
   burnSession: () => set({ isBurned: true }),
   
