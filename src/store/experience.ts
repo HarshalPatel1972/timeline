@@ -79,7 +79,7 @@ function generateUniverse(seed: string): UniverseDNA {
     geometry: {
       layout: ['sphere', 'grid', 'tunnel', 'spiral', 'cloud', 'ring'][Math.floor(rng() * 6)] as any,
       shape: ['sphere', 'box', 'tetrahedon', 'torus', 'cone'][Math.floor(rng() * 5)] as any,
-      count: Math.floor(200 + rng() * 1500), // optimized count
+      count: Math.floor(200 + rng() * 1000), // drastically reduced for performance (was 4000)
       scale: 0.2 + rng() * 1.5,
       roughness: rng(),
       metalness: rng(),
